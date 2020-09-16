@@ -8,7 +8,11 @@ const googledoc =
 function cleanHTML(html) {
   return html
     .replace(/<style[^>]*>([^<]+)<\/style>/gi, "")
-    .replace(/style="([^>"]+)"/gi, "");
+    .replace(
+      /<img[^>]+src="([^"]+)" style="width: ([0-9]+)(\.[0-9]+)?px[^>]+>/gi,
+      `<img src="$1" style="width: $2px; max-width: 100%;" />`
+    )
+    .replace(/<span style[^>]+>/gi, "<span>");
 }
 
 export async function getStaticProps() {
