@@ -12,7 +12,8 @@ function cleanHTML(html) {
       /<img[^>]+src="([^"]+)" style="width: ([0-9]+)(\.[0-9]+)?px[^>]+>/gi,
       `<img src="$1" style="width: $2px; max-width: 100%;" />`
     )
-    .replace(/<span style[^>]+>/gi, "<span>");
+    .replace(/<span style[^>]+>/gi, "<span>")
+    .replace(/<hr style="page-break[^"]+">/gi, "<hr>");
 }
 
 export async function getStaticProps() {
