@@ -1,27 +1,17 @@
+import React from "react";
 import Head from "next/head";
-import styles from "../styles/Home.module.css";
-import fetch from "node-fetch";
+import { getHTMLFromGoogleDocId } from "../lib/googledoc";
+import Footer from "../components/Footer";
+import ErrorNotPublished from "../components/ErrorNotPublished";
+import RenderGoogleDoc from "../components/RenderGoogleDoc";
+import sitemap from "../sitemap.json";
 
-const googledoc =
-  "https://docs.google.com/document/d/e/2PACX-1vT3vLy2CnKpjKyx4_KCaA0rfyt2JBj7URknBTlFJIQkTppuAFOEjG9VQk4jULqcrhTjL843XRqkEm7_/pub?embedded=true";
+export async function getStaticProps({ params }) {
+  const googleDocId = sitemap.index.googleDocId;
+  const page = await getHTMLFromGoogleDocId(googleDocId);
 
-function cleanHTML(html) {
-  return html
-    .replace(/<style[^>]*>([^<]+)<\/style>/gi, "")
-    .replace(
-      /<img[^>]+src="([^"]+)" style="width: ([0-9]+)(\.[0-9]+)?px[^>]+>/gi,
-      `<img src="$1" style="width: $2px; max-width: 100%;" />`
-    )
-    .replace(/<span style[^>]+>/gi, "<span>")
-    .replace(/<hr style="page-break[^"]+">/gi, "<hr>");
-}
-
-export async function getStaticProps() {
-  const res = await fetch(googledoc);
-  const html = await res.text();
-  console.log(html);
   return {
-    props: { html: cleanHTML(html) },
+    props: { page, googleDocId },
     // we will attempt to re-generate the page:
     // - when a request comes in
     // - at most once every 180 seconds
@@ -29,35 +19,27 @@ export async function getStaticProps() {
   };
 }
 
-export default function Home({ html }) {
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Playstreets Brussels</title>
-        <link rel="icon" href="/favicon.png" />
-        <meta
-          name="description"
-          content="Participate in a play street in your neighborhood or organise one!"
-        />
-      </Head>
+export default class Home extends React.Component {
+  render() {
+    const { page, googleDocId } = this.props;
+    return (
+      <div className="w-full">
+        <Head>
+          <title>{sitemap.index.title}</title>
+          <link rel="icon" href={sitemap.index.favicon} />
+          <meta name="description" content={sitemap.index.description} />
+        </Head>
 
-      <main className={styles.main}>
-        <div dangerouslySetInnerHTML={{ __html: html }} />
-      </main>
+        <main className="max-w-screen-md px-4 mx-auto">
+          {!page.body && <p>Loading...</p>}
+          {page.body === "not_published" && (
+            <ErrorNotPublished googleDocId={googleDocId} />
+          )}
+          {page.body && <RenderGoogleDoc html={page.body} />}
+        </main>
 
-      <footer className={styles.footer}>
-        <a
-          href="https://citizenspring.earth"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img
-            src="/citizenspring.svg"
-            alt="Citizen Spring Logo"
-            className={styles.logo}
-          />
-        </a>
-      </footer>
-    </div>
-  );
+        <Footer googleDocId={googleDocId} />
+      </div>
+    );
+  }
 }
